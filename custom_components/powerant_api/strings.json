@@ -1,0 +1,86 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PowerAnt",
+        "description": "Connect a PowerAnt device using the Share device API credentials.",
+        "data": {
+          "product_key": "Product key",
+          "api_key": "API key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect PowerAnt",
+        "description": "Enter a new API key for the PowerAnt device.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API key or product key.",
+      "cannot_connect": "Unable to connect to the PowerAnt service."
+    },
+    "abort": {
+      "already_configured": "This PowerAnt device is already configured.",
+      "reauth_successful": "Authentication was updated successfully."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_price": {
+        "name": "Current price"
+      },
+      "current_period": {
+        "name": "Current period"
+      },
+      "next_change": {
+        "name": "Next change"
+      },
+      "calculated_schedule": {
+        "name": "Calculated schedule"
+      }
+    },
+    "binary_sensor": {
+      "control": {
+        "name": "Control"
+      }
+    },
+    "number": {
+      "cheapest_hours": {
+        "name": "Cheapest hours"
+      },
+      "price_trigger": {
+        "name": "Price trigger"
+      },
+      "time_slots": {
+        "name": "Time slots"
+      },
+      "transmission_fee": {
+        "name": "Tran Fee {start}-{end}"
+      }
+    },
+    "select": {
+      "operating_mode": {
+        "name": "Operating mode"
+      },
+      "price_area": {
+        "name": "Price area"
+      },
+      "price_resolution": {
+        "name": "Price resolution"
+      },
+      "tariff": {
+        "name": "Tariff {start}-{end}"
+      }
+    },
+    "switch": {
+      "power": {
+        "name": "Power"
+      },
+      "tariffs": {
+        "name": "Tariffs"
+      }
+    }
+  }
+}

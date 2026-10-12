@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temporary and backup files
+*.bak
+*.tmp
+
+# Secrets
+.env
+.env.*
