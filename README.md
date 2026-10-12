@@ -114,6 +114,24 @@ The PowerAnt API also supports special tariff values:
 
 These settings affect device control and should be used carefully.
 
+## Example Dashboard
+
+An example Home Assistant dashboard is available for visualizing PowerAnt schedules, electricity prices, device settings, and hourly tariffs.
+
+The dashboard includes:
+- Today's and tomorrow's calculated schedules.
+- Power ON/OFF periods and current time highlighting.
+- Device settings and hourly tariff configuration.
+- An optional **Show tomorrow** toggle.
+
+**Files:**
+- [Dashboard YAML](examples/dashboard/powerant_dashboard.yaml)
+- [Dashboard setup instructions](examples/dashboard/powerant_dashboard_README.md)
+
+The example requires **ApexCharts Card** and **card-mod**, both available through HACS.
+
+Follow the setup instructions to configure the dashboard for your own PowerAnt device.
+
 ## Troubleshooting
 
 If a device cannot be added or updated:
