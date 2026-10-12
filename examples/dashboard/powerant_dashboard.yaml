@@ -1,0 +1,1404 @@
+views:
+  - title: "###NAME###"
+    path: powerant-device
+    panel: true
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: |
+              # PowerAnt – ###NAME###
+            card_mod:
+              style: |
+                ha-card {
+                  border: none !important;
+                  box-shadow: none !important;
+                  background: transparent !important;
+                  display: flex !important;
+                  justify-content: center !important;                
+                }
+                ha-markdown {
+                  padding: 8px 16px 4px 16px !important;
+                  text-align: center !important;
+                }
+          - type: entities
+            entities:
+              - entity: input_boolean.show_tomorrow
+                name: Show tomorrow
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Today - Calculated schedule
+              show_states: false
+            graph_span: 24h
+            span:
+              start: day
+            apex_config:
+              chart:
+                height: 300
+                stacked: true
+              xaxis:
+                type: datetime
+              yaxis:
+                decimalsInFloat: 2
+                title:
+                  text: c/kWh
+              plotOptions:
+                bar:
+                  columnWidth: 80%
+            series:
+              - entity: sensor.###DEVICE###_calculated_schedule
+                name: Power ON
+                type: column
+                color: green
+                show:
+                  legend_value: false
+                data_generator: |
+                  const schedule = entity.attributes.schedule || [];
+
+                  return schedule.map((item) => {
+                    const ts = item.timestamp;
+
+                    const year = Number(ts.substring(0, 4));
+                    const month = Number(ts.substring(4, 6)) - 1;
+                    const day = Number(ts.substring(6, 8));
+                    const hour = Number(ts.substring(8, 10));
+                    const minute = ts.length >= 12
+                      ? Number(ts.substring(10, 12))
+                      : 0;
+
+                    const time = new Date(
+                      year,
+                      month,
+                      day,
+                      hour,
+                      minute
+                    ).getTime();
+
+                    return [
+                      time,
+                      item.is_on ? Number(item.effective) : 0
+                    ];
+                  });
+              - entity: sensor.###DEVICE###_calculated_schedule
+                name: Power OFF
+                type: column
+                color: lightgrey
+                show:
+                  legend_value: false
+                data_generator: |
+                  const schedule = entity.attributes.schedule || [];
+
+                  return schedule.map((item) => {
+                    const ts = item.timestamp;
+
+                    const year = Number(ts.substring(0, 4));
+                    const month = Number(ts.substring(4, 6)) - 1;
+                    const day = Number(ts.substring(6, 8));
+                    const hour = Number(ts.substring(8, 10));
+                    const minute = ts.length >= 12
+                      ? Number(ts.substring(10, 12))
+                      : 0;
+
+                    const time = new Date(
+                      year,
+                      month,
+                      day,
+                      hour,
+                      minute
+                    ).getTime();
+
+                    return [
+                      time,
+                      item.is_on ? 0 : Number(item.effective)
+                    ];
+                  });
+              - entity: sensor.###DEVICE###_calculated_schedule
+                name: Now
+                type: column
+                color: red
+                show:
+                  legend_value: false
+                data_generator: >
+                  const schedule = entity.attributes.schedule || []; const now =
+                  Date.now();
+
+                  const rows = schedule
+                    .map((item) => {
+                      const ts = item.timestamp;
+                      const time = new Date(
+                        Number(ts.substring(0, 4)),
+                        Number(ts.substring(4, 6)) - 1,
+                        Number(ts.substring(6, 8)),
+                        Number(ts.substring(8, 10)),
+                        ts.length >= 12 ? Number(ts.substring(10, 12)) : 0
+                      ).getTime();
+                      return { time, eff: Number(item.effective) };
+                    })
+                    .sort((a, b) => a.time - b.time);
+
+                  const diffs = rows
+                    .slice(1)
+                    .map((r, i) => r.time - rows[i].time)
+                    .filter((d) => d > 0);
+                  const SLOT = diffs.length ? Math.min(...diffs) : 3600000;
+
+                  // Total height of the "Now" stack = highest daily price
+                  // + 15% margin (minimum 0.5)
+
+                  const maxPrice = Math.max(0, ...rows.map((r) => r.eff)); const
+                  H = maxPrice + Math.max(maxPrice * 0.15,
+                  0.5);                 
+
+                  return rows.map((r) => [
+                    r.time,
+                    now >= r.time && now < r.time + SLOT ? Math.max(H - r.eff, 0) : 0,
+                  ]);
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: input_boolean.show_tomorrow
+                state: "on"
+            card:
+              type: custom:apexcharts-card
+              header:
+                show: true
+                title: Tomorrow - Calculated schedule
+                show_states: false
+              graph_span: 24h
+              span:
+                start: day
+                offset: +1d
+              apex_config:
+                chart:
+                  height: 300
+                  stacked: true
+                xaxis:
+                  type: datetime
+                yaxis:
+                  decimalsInFloat: 2
+                  title:
+                    text: c/kWh
+                plotOptions:
+                  bar:
+                    columnWidth: 80%
+              series:
+                - entity: sensor.###DEVICE###_calculated_schedule
+                  name: Power ON
+                  type: column
+                  color: green
+                  show:
+                    legend_value: false
+                  data_generator: |
+                    const schedule = entity.attributes.tomorrow_schedule || [];
+
+                    return schedule.map((item) => {
+                      const ts = item.timestamp;
+
+                      const year = Number(ts.substring(0, 4));
+                      const month = Number(ts.substring(4, 6)) - 1;
+                      const day = Number(ts.substring(6, 8));
+                      const hour = Number(ts.substring(8, 10));
+                      const minute = ts.length >= 12
+                        ? Number(ts.substring(10, 12))
+                        : 0;
+
+                      const time = new Date(
+                        year,
+                        month,
+                        day,
+                        hour,
+                        minute
+                      ).getTime();
+
+                      return [
+                        time,
+                        item.is_on ? Number(item.effective) : 0
+                      ];
+                    });
+                - entity: sensor.###DEVICE###_calculated_schedule
+                  name: Power OFF
+                  type: column
+                  color: lightgrey
+                  show:
+                    legend_value: false
+                  data_generator: |
+                    const schedule = entity.attributes.tomorrow_schedule || [];
+
+                    return schedule.map((item) => {
+                      const ts = item.timestamp;
+
+                      const year = Number(ts.substring(0, 4));
+                      const month = Number(ts.substring(4, 6)) - 1;
+                      const day = Number(ts.substring(6, 8));
+                      const hour = Number(ts.substring(8, 10));
+                      const minute = ts.length >= 12
+                        ? Number(ts.substring(10, 12))
+                        : 0;
+
+                      const time = new Date(
+                        year,
+                        month,
+                        day,
+                        hour,
+                        minute
+                      ).getTime();
+
+                      return [
+                        time,
+                        item.is_on ? 0 : Number(item.effective)
+                      ];
+                    });          
+          - type: entities
+            title: Settings
+            show_header_toggle: false
+            card_mod:
+              style: |
+                ha-card {
+                  max-width: 1050px;
+                  margin: 0 auto;
+                  width: 100%;
+                }
+            entities:
+              - entity: select.###DEVICE###_price_area
+                name: Price area
+              - entity: select.###DEVICE###_price_resolution
+                name: Price resolution
+              - entity: select.###DEVICE###_operating_mode
+                name: Operating mode
+              - entity: number.###DEVICE###_cheapest_hours
+                name: Cheapest hours
+              - entity: number.###DEVICE###_time_slots
+                name: Time slots
+              - entity: number.###DEVICE###_price_trigger
+                name: Price trigger
+              - entity: switch.###DEVICE###_power
+                name: Power
+              - entity: switch.###DEVICE###_tariffs
+                name: Tariffs
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: switch.###DEVICE###_tariffs
+                state: 'on'
+            card:
+              type: grid
+              columns: 3
+              square: false
+              card_mod:
+                style: |
+                  #root {
+                    grid-template-columns: 90px minmax(350px, 700px) 220px !important;
+                    max-width: 1050px;
+                    margin: 0 auto;
+                    width: 100%;
+                    gap: 4px 8px !important;
+                  }
+              cards:
+                - type: markdown
+                  content: '**Time**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                         display: flex !important;
+                        align-items: center;
+                        justify-content: center;                      
+                      }
+                      ha-markdown {
+                        padding: 4px 0 !important;
+                        width: 100%;
+                        text-align: center !important;                      
+                      }
+                - type: markdown
+                  content: '**Tariff**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                         display: flex !important;
+                        align-items: center;
+                        justify-content: center;                      
+                      }
+                      ha-markdown {
+                        padding: 4px 0 !important;
+                        width: 100%;
+                        text-align: center !important;                      
+                      }
+                - type: markdown
+                  content: '**Transmission fee**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                         display: flex !important;
+                        align-items: center;
+                        justify-content: center;                      
+                      }
+                      ha-markdown {
+                        padding: 4px 0 !important;
+                        width: 100%;
+                        text-align: center !important;                      
+                      }
+                - type: markdown
+                  content: '**00-01**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_00_01
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                      
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_00_01
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                      
+                - type: markdown
+                  content: '**01-02**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_01_02
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                      
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_01_02
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**02-03**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_02_03
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                                         
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_02_03
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**03-04**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_03_04
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_03_04
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**04-05**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_04_05
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_04_05
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**05-06**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_05_06
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_05_06
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**06-07**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_06_07
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_06_07
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**07-08**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_07_08
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_07_08
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**08-09**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_08_09
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_08_09
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**09-10**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_09_10
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_09_10
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**10-11**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_10_11
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_10_11
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**11-12**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_11_12
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_11_12
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**12-13**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_12_13
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_12_13
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**13-14**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_13_14
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_13_14
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**14-15**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_14_15
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_14_15
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**15-16**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_15_16
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_15_16
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**16-17**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_16_17
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_16_17
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**17-18**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_17_18
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_17_18
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**18-19**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_18_19
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_18_19
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**19-20**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_19_20
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_19_20
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**20-21**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_20_21
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_20_21
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**21-22**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_21_22
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_21_22
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**22-23**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_22_23
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_22_23
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: markdown
+                  content: '**23-00**'
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      ha-markdown {
+                        padding: 0 !important;
+                      }
+                - type: entities
+                  entities:
+                    - entity: select.###DEVICE###_tariff_23_00
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
+                - type: entities
+                  entities:
+                    - entity: number.###DEVICE###_tran_fee_23_00
+                      name: " "
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                      }
+                      #states {
+                        padding: 0 !important;
+                      }                   
