@@ -572,29 +572,8 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
                 f"Unsupported PowerAnt mode: {value}"
             )
 
-        old_mode = self.data.get("mode")
-
-        # Update Home Assistant immediately.
-        self.data["mode"] = mode
-        self.async_update_listeners()
-
-        try:
-            # Update PowerAnt.
-            await self.api.async_update_device(
-                self.product_key,
-                {
-                    "mode": mode,
-                },
-            )
-
-        except Exception:
-            # Restore the previous mode if the update fails.
-            self.data["mode"] = old_mode
-            self.async_update_listeners()
-            raise
-
-        # Confirm the value from the API.
-        await self.async_request_refresh()
-
-
-
+        await self._async_update_setting(
+            "mode",
+            "mode",
+            mode,
+        )

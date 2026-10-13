@@ -37,7 +37,28 @@ def load_method(name):
         type_ignores=[],
     )
 
-    namespace = {}
+    const_source = SOURCE.with_name("const.py")
+    const_tree = ast.parse(
+        const_source.read_text(encoding="utf-8")
+    )
+
+    modes_node = next(
+        node
+        for node in const_tree.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name)
+            and target.id == "POWERANT_MODES"
+            for target in node.targets
+        )
+    )
+
+    namespace = {
+        "POWERANT_MODES": ast.literal_eval(
+            modes_node.value
+        ),
+    }
+
     exec(compile(module, str(SOURCE), "exec"), namespace)
 
     return namespace[name]
@@ -411,6 +432,78 @@ class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
         coordinator.api.async_update_device.assert_awaited_once_with(
             "test-device",
             {"country_area": "finland-fi1_15m"},
+        )
+
+        # No refresh after API failure.
+        coordinator.async_request_refresh.assert_not_awaited()
+
+    async def test_mode_success(self):
+        method = load_method("async_set_mode")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"mode": "off"},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+        await method(coordinator, "TIME_SLOTS")
+
+        self.assertEqual(
+            coordinator.data["mode"],
+            "time_slots",
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"mode": "time_slots"},
+        )
+
+        coordinator.async_update_listeners.assert_called_once()
+        coordinator.async_request_refresh.assert_awaited_once()
+
+    async def test_mode_api_failure(self):
+        method = load_method("async_set_mode")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"mode": "off"},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(
+                    side_effect=RuntimeError("API failure")
+                ),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "API failure",
+        ):
+            await method(coordinator, "TIME_SLOTS")
+
+        # Original mode must be restored.
+        self.assertEqual(
+            coordinator.data["mode"],
+            "off",
+        )
+
+        # Notify once for the new mode and once for rollback.
+        self.assertEqual(
+            coordinator.async_update_listeners.call_count,
+            2,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"mode": "time_slots"},
         )
 
         # No refresh after API failure.
