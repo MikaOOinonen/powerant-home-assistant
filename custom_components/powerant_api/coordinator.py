@@ -507,6 +507,38 @@ def _calculate_status(
             entry["is_on"] = not entry["is_on"]
 
 
+def _find_next_change(
+    entries: list[dict],
+    tomorrow_entries: list[dict],
+    current_index: int,
+    timestamp_format: str,
+) -> dict | None:
+    """Find the next ON/OFF state change."""
+
+    current = entries[current_index]
+
+    future_entries = (
+        entries[current_index + 1:]
+        + tomorrow_entries
+    )
+
+    for entry in future_entries:
+
+        if entry["is_on"] != current["is_on"]:
+
+            change = datetime.strptime(
+                entry["timestamp"],
+                timestamp_format,
+            )
+
+            return {
+                "time": change.strftime("%H:%M"),
+                "state": entry["is_on"],
+            }
+
+    return None
+
+
 class PowerAntCoordinator(DataUpdateCoordinator[dict]):
 
     def __init__(
@@ -758,28 +790,12 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         #
         # Find next ON/OFF change
         #
-        next_change = None
-
-        future_entries = (
-            entries[current_index + 1:]
-            + tomorrow_entries
+        next_change = _find_next_change(
+            entries,
+            tomorrow_entries,
+            current_index,
+            timestamp_format,
         )
-
-        for entry in future_entries:
-
-            if entry["is_on"] != current["is_on"]:
-
-                change = datetime.strptime(
-                    entry["timestamp"],
-                    timestamp_format,
-                )
-
-                next_change = {
-                    "time": change.strftime("%H:%M"),
-                    "state": entry["is_on"],
-                }
-
-                break
 
         return {
             "device": device,
