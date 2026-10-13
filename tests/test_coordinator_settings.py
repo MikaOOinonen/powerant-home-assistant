@@ -56,6 +56,35 @@ def attach_update_setting(coordinator):
 
 class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
 
+    async def test_country_area_success(self):
+        method = load_method("async_set_country_area")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"country_area": "finland-fi1"},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+        await method(coordinator, "finland-fi1_15m")
+
+        self.assertEqual(
+            coordinator.data["country_area"],
+            "finland-fi1_15m",
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"country_area": "finland-fi1_15m"},
+        )
+
+        coordinator.async_update_listeners.assert_called_once()
+        coordinator.async_request_refresh.assert_awaited_once()
+
     async def test_uses_tariffs_success(self):
         method = load_method("async_set_uses_tariffs")
 
@@ -339,6 +368,49 @@ class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
         coordinator.api.async_update_device.assert_awaited_once_with(
             "test-device",
             {"uses_tariffs": True},
+        )
+
+        # No refresh after API failure.
+        coordinator.async_request_refresh.assert_not_awaited()
+
+    async def test_country_area_api_failure(self):
+        method = load_method("async_set_country_area")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"country_area": "finland-fi1"},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(
+                    side_effect=RuntimeError("API failure")
+                ),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "API failure",
+        ):
+            await method(coordinator, "finland-fi1_15m")
+
+        # Original area must be restored.
+        self.assertEqual(
+            coordinator.data["country_area"],
+            "finland-fi1",
+        )
+
+        # Notify once for the new area and once for rollback.
+        self.assertEqual(
+            coordinator.async_update_listeners.call_count,
+            2,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"country_area": "finland-fi1_15m"},
         )
 
         # No refresh after API failure.

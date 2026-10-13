@@ -399,29 +399,11 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
     ) -> None:
         """Set the PowerAnt country area."""
 
-        old_country_area = self.data.get("country_area")
-
-        # Update Home Assistant immediately.
-        self.data["country_area"] = country_area
-        self.async_update_listeners()
-
-        try:
-            # Update PowerAnt.
-            await self.api.async_update_device(
-                self.product_key,
-                {
-                    "country_area": country_area,
-                },
-            )
-
-        except Exception:
-            # Restore the previous area if the update fails.
-            self.data["country_area"] = old_country_area
-            self.async_update_listeners()
-            raise
-
-        # Confirm the value from the API.
-        await self.async_request_refresh()
+        await self._async_update_setting(
+            "country_area",
+            "country_area",
+            country_area,
+        )
 
 
     async def async_set_price_area(
