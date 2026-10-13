@@ -27,6 +27,7 @@ from .const import (
 )
 
 from .schedule import _calculate_status, _find_next_change
+from .prices import _is_price_key
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,10 +60,6 @@ def _as_bool_or_none(value):
         return value
 
     return None
-
-
-def _is_price_key(key: str) -> bool:
-    return isinstance(key, str) and key.isdigit() and len(key) in (10, 12)
 
 
 def _build_price_entries(
