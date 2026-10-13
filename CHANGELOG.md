@@ -4,6 +4,18 @@ All notable changes to the PowerAnt API Home Assistant integration are documente
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-13
+
+### Added
+- Added Hassfest validation to GitHub Actions.
+
+### Fixed
+- Corrected manifest key ordering to pass Hassfest validation.
+
+### Compatibility
+- No changes to integration functionality or entity behavior.
+- No configuration migration is required.
+
 ## [0.2.0] - 2026-10-13
 
 ### Added
@@ -37,7 +49,8 @@ All notable changes to the PowerAnt API Home Assistant integration are documente
 - Support for 15-minute and 60-minute electricity price resolution.
 - Multi-device configuration through Home Assistant.
 
-[Unreleased]: https://github.com/MikaOOinonen/powerant-home-assistant/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/MikaOOinonen/powerant-home-assistant/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/MikaOOinonen/powerant-home-assistant/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/MikaOOinonen/powerant-home-assistant/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MikaOOinonen/powerant-home-assistant/releases/tag/v0.1.0
 
