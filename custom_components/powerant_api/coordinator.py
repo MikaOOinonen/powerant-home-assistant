@@ -321,6 +321,38 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         }
 
 
+    async def _async_update_setting(
+        self,
+        api_key: str,
+        data_key: str,
+        value,
+    ) -> None:
+        """Update a PowerAnt setting with optimistic state handling."""
+
+        old_value = self.data.get(data_key)
+
+        # Update Home Assistant immediately.
+        self.data[data_key] = value
+        self.async_update_listeners()
+
+        try:
+            await self.api.async_update_device(
+                self.product_key,
+                {
+                    api_key: value,
+                },
+            )
+
+        except Exception:
+            # Restore the previous value if the update fails.
+            self.data[data_key] = old_value
+            self.async_update_listeners()
+            raise
+
+        # Confirm the value from the API.
+        await self.async_request_refresh()
+
+
     async def async_set_cheapest_hours(
         self,
         value: float,
@@ -334,29 +366,11 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         else:
             api_value = number
 
-        old_value = self.data.get("cheapest_hours_value")
-
-        # Update Home Assistant immediately.
-        self.data["cheapest_hours_value"] = api_value
-        self.async_update_listeners()
-
-        try:
-            # Update PowerAnt.
-            await self.api.async_update_device(
-                self.product_key,
-                {
-                    "cheapest_hours": api_value,
-                },
-            )
-
-        except Exception:
-            # Restore the previous value if the update fails.
-            self.data["cheapest_hours_value"] = old_value
-            self.async_update_listeners()
-            raise
-
-        # Confirm the value from the API.
-        await self.async_request_refresh()
+        await self._async_update_setting(
+            "cheapest_hours",
+            "cheapest_hours_value",
+            api_value,
+        )
 
 
     async def async_set_price_trigger(
@@ -372,29 +386,11 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         else:
             api_value = number
 
-        old_value = self.data.get("price_trigger_value")
-
-        # Update Home Assistant immediately.
-        self.data["price_trigger_value"] = api_value
-        self.async_update_listeners()
-
-        try:
-            # Update PowerAnt.
-            await self.api.async_update_device(
-                self.product_key,
-                {
-                    "price_trigger": api_value,
-                },
-            )
-
-        except Exception:
-            # Restore the previous value if the update fails.
-            self.data["price_trigger_value"] = old_value
-            self.async_update_listeners()
-            raise
-
-        # Confirm the value from the API.
-        await self.async_request_refresh()
+        await self._async_update_setting(
+            "price_trigger",
+            "price_trigger_value",
+            api_value,
+        )
 
 
     async def async_set_country_area(
