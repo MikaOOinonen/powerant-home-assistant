@@ -509,6 +509,198 @@ class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
         # No refresh after API failure.
         coordinator.async_request_refresh.assert_not_awaited()
 
+    async def test_tariff_success(self):
+        method = load_method("async_set_tariff")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={
+                "tariffs": {
+                    8: 1.5,
+                },
+            },
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        await method(coordinator, 8, "2.5")
+
+        # Numeric string must be converted to float.
+        self.assertEqual(
+            coordinator.data["tariffs"][8],
+            2.5,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"tariff_8": 2.5},
+        )
+
+        coordinator.async_update_listeners.assert_called_once()
+        coordinator.async_request_refresh.assert_awaited_once()
+
+    async def test_tariff_api_failure(self):
+        method = load_method("async_set_tariff")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={
+                "tariffs": {
+                    8: 1.5,
+                },
+            },
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(
+                    side_effect=RuntimeError("API failure")
+                ),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "API failure",
+        ):
+            await method(coordinator, 8, "2.5")
+
+        # Original tariff must be restored.
+        self.assertEqual(
+            coordinator.data["tariffs"][8],
+            1.5,
+        )
+
+        # Notify once for update and once for rollback.
+        self.assertEqual(
+            coordinator.async_update_listeners.call_count,
+            2,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"tariff_8": 2.5},
+        )
+
+        # No refresh after API failure.
+        coordinator.async_request_refresh.assert_not_awaited()
+
+    async def test_tariff_special_values(self):
+        method = load_method("async_set_tariff")
+
+        for value, expected in [
+            ("ON", "on"),
+            ("OFF", "off"),
+            ("", ""),
+            ("  ON  ", "on"),
+        ]:
+            with self.subTest(value=value):
+                coordinator = SimpleNamespace(
+                    product_key="test-device",
+                    data={"tariffs": {}},
+                    api=SimpleNamespace(
+                        async_update_device=AsyncMock(),
+                    ),
+                    async_update_listeners=Mock(),
+                    async_request_refresh=AsyncMock(),
+                )
+
+                await method(coordinator, 8, value)
+
+                self.assertEqual(
+                    coordinator.data["tariffs"][8],
+                    expected,
+                )
+
+                coordinator.api.async_update_device.assert_awaited_once_with(
+                    "test-device",
+                    {"tariff_8": expected},
+                )
+
+                coordinator.async_update_listeners.assert_called_once()
+                coordinator.async_request_refresh.assert_awaited_once()
+
+    async def test_tariff_invalid_values(self):
+        method = load_method("async_set_tariff")
+
+        for value in ["invalid", "auto", "1.2.3"]:
+            with self.subTest(value=value):
+                coordinator = SimpleNamespace(
+                    product_key="test-device",
+                    data={"tariffs": {8: 1.5}},
+                    api=SimpleNamespace(
+                        async_update_device=AsyncMock(),
+                    ),
+                    async_update_listeners=Mock(),
+                    async_request_refresh=AsyncMock(),
+                )
+
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "Unsupported PowerAnt tariff value",
+                ):
+                    await method(coordinator, 8, value)
+
+                # Original value must remain unchanged.
+                self.assertEqual(
+                    coordinator.data["tariffs"][8],
+                    1.5,
+                )
+
+                # No API call or state notification.
+                coordinator.api.async_update_device.assert_not_awaited()
+                coordinator.async_update_listeners.assert_not_called()
+                coordinator.async_request_refresh.assert_not_awaited()
+
+    async def test_tariff_hour_boundaries(self):
+        method = load_method("async_set_tariff")
+
+        for hour in [0, 23, -1, 24]:
+            with self.subTest(hour=hour):
+                coordinator = SimpleNamespace(
+                    product_key="test-device",
+                    data={"tariffs": {}},
+                    api=SimpleNamespace(
+                        async_update_device=AsyncMock(),
+                    ),
+                    async_update_listeners=Mock(),
+                    async_request_refresh=AsyncMock(),
+                )
+
+                if hour in (0, 23):
+                    await method(coordinator, hour, "on")
+
+                    self.assertEqual(
+                        coordinator.data["tariffs"][hour],
+                        "on",
+                    )
+
+                    coordinator.api.async_update_device.assert_awaited_once_with(
+                        "test-device",
+                        {f"tariff_{hour}": "on"},
+                    )
+
+                    coordinator.async_update_listeners.assert_called_once()
+                    coordinator.async_request_refresh.assert_awaited_once()
+
+                else:
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "Unsupported PowerAnt tariff hour",
+                    ):
+                        await method(coordinator, hour, "on")
+
+                    self.assertEqual(
+                        coordinator.data["tariffs"],
+                        {},
+                    )
+
+                    coordinator.api.async_update_device.assert_not_awaited()
+                    coordinator.async_update_listeners.assert_not_called()
+                    coordinator.async_request_refresh.assert_not_awaited()
+
 
 if __name__ == "__main__":
     unittest.main()
