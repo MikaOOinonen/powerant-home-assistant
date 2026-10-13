@@ -1,12 +1,12 @@
 {
   "domain": "powerant_api",
   "name": "PowerAnt API",
-  "version": "0.2.0",
+  "codeowners": ["@MikaOOinonen"],
   "config_flow": true,
+  "documentation": "https://github.com/MikaOOinonen/powerant-home-assistant",
   "integration_type": "device",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/MikaOOinonen/powerant-home-assistant/issues",
   "requirements": [],
-  "codeowners": ["@MikaOOinonen"],
-  "documentation": "https://github.com/MikaOOinonen/powerant-home-assistant",
-  "issue_tracker": "https://github.com/MikaOOinonen/powerant-home-assistant/issues"
+  "version": "0.2.0"
 }
