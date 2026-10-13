@@ -28,3 +28,37 @@ def _get_device_settings(
         price_trigger,
         time_slots,
     )
+
+
+def _get_device_metadata(
+    device: dict,
+) -> tuple:
+    """Extract device metadata from PowerAnt API response."""
+
+    expanded_device_type = (
+        device.get("expand", {}).get("device_type", {})
+    )
+
+    device_model = expanded_device_type.get("device_name")
+
+    firmware_version = expanded_device_type.get("version")
+
+    capabilities = expanded_device_type.get(
+        "device_capabilities",
+        [],
+    )
+
+    if not isinstance(capabilities, list):
+        capabilities = []
+
+    country_area = device.get(
+        "country_area",
+        "finland-fi1_15m",
+    )
+
+    return (
+        device_model,
+        firmware_version,
+        capabilities,
+        country_area,
+    )
