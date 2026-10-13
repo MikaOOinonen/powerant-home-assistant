@@ -34,20 +34,9 @@ from .prices import (
     _get_price_period_context,
 )
 
-from .helpers import _as_bool_or_none
+from .helpers import _as_bool_or_none, _as_float_or_none
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _as_float_or_none(value):
-    """Convert a PowerAnt numeric API value to float or None."""
-    if value in (None, ""):
-        return None
-
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
 
 
 def _as_int_or_none(value):

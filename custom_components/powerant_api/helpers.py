@@ -9,3 +9,14 @@ def _as_bool_or_none(value):
         return value
 
     return None
+
+
+def _as_float_or_none(value):
+    """Convert a PowerAnt numeric API value to float or None."""
+    if value in (None, ""):
+        return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
