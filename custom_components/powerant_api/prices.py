@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 
 def _is_price_key(key: str) -> bool:
     return isinstance(key, str) and key.isdigit() and len(key) in (10, 12)
@@ -93,3 +94,36 @@ def _build_price_entries(
     )
 
     return entries
+
+
+def _find_current_period(
+    entries: list[dict],
+    now_local: datetime,
+    is_15_minute: bool,
+) -> tuple[int | None, str]:
+    """Find the current electricity price period."""
+
+    if is_15_minute:
+        minute = (
+            now_local.minute // 15
+        ) * 15
+
+        current_key = (
+            now_local.strftime("%Y%m%d%H")
+            + f"{minute:02d}"
+        )
+    else:
+        current_key = now_local.strftime(
+            "%Y%m%d%H"
+        )
+
+    current_index = next(
+        (
+            index
+            for index, entry in enumerate(entries)
+            if entry["timestamp"] == current_key
+        ),
+        None,
+    )
+
+    return current_index, current_key
