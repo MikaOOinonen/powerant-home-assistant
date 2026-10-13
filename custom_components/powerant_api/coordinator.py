@@ -572,6 +572,46 @@ def _find_current_period(
     return current_index, current_key
 
 
+def _get_price_period_context(
+    prices: dict,
+    country_area: str,
+    now_utc: datetime,
+) -> tuple[datetime, str, str, bool, int, str]:
+    """Build date and resolution context for price periods."""
+
+    offset_hours = float(
+        prices.get("offset_hour", 0)
+    )
+
+    now_local = now_utc + timedelta(
+        hours=offset_hours
+    )
+
+    day_prefix = now_local.strftime("%Y%m%d")
+
+    tomorrow_prefix = (
+        now_local + timedelta(days=1)
+    ).strftime("%Y%m%d")
+
+    is_15_minute = country_area.endswith("_15m")
+    period_minutes = 15 if is_15_minute else 60
+
+    timestamp_format = (
+        "%Y%m%d%H%M"
+        if is_15_minute
+        else "%Y%m%d%H"
+    )
+
+    return (
+        now_local,
+        day_prefix,
+        tomorrow_prefix,
+        is_15_minute,
+        period_minutes,
+        timestamp_format,
+    )
+
+
 class PowerAntCoordinator(DataUpdateCoordinator[dict]):
 
     def __init__(
@@ -684,28 +724,19 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
             prices.get("offset_hour"),
         )
 
-        offset_hours = float(
-            prices.get("offset_hour", 0)
-        )
-
         now_utc = datetime.now(timezone.utc)
-        now_local = now_utc + timedelta(
-            hours=offset_hours
-        )
 
-        day_prefix = now_local.strftime("%Y%m%d")
-
-        tomorrow_prefix = (
-            now_local + timedelta(days=1)
-        ).strftime("%Y%m%d")
-
-        is_15_minute = country_area.endswith("_15m")
-        period_minutes = 15 if is_15_minute else 60
-
-        timestamp_format = (
-            "%Y%m%d%H%M"
-            if is_15_minute
-            else "%Y%m%d%H"
+        (
+            now_local,
+            day_prefix,
+            tomorrow_prefix,
+            is_15_minute,
+            period_minutes,
+            timestamp_format,
+        ) = _get_price_period_context(
+            prices,
+            country_area,
+            now_utc,
         )
 
         entries = _build_price_entries(
