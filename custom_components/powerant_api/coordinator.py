@@ -492,29 +492,12 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         """Set the PowerAnt time slots setting."""
 
         api_value = int(value)
-        old_value = self.data.get("time_slots_value")
 
-        # Update Home Assistant immediately.
-        self.data["time_slots_value"] = api_value
-        self.async_update_listeners()
-
-        try:
-            # Update PowerAnt.
-            await self.api.async_update_device(
-                self.product_key,
-                {
-                    "time_slots": api_value,
-                },
-            )
-
-        except Exception:
-            # Restore the previous value if the update fails.
-            self.data["time_slots_value"] = old_value
-            self.async_update_listeners()
-            raise
-
-        # Confirm the value from the API.
-        await self.async_request_refresh()
+        await self._async_update_setting(
+            "time_slots",
+            "time_slots_value",
+            api_value,
+        )
 
 
     async def async_set_uses_tariffs(

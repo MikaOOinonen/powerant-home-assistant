@@ -198,6 +198,79 @@ class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
 
         coordinator.async_request_refresh.assert_not_awaited()
 
+    async def test_time_slots_success(self):
+        method = load_method("async_set_time_slots")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"time_slots_value": 3},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+        await method(coordinator, 4.9)
+
+        # time_slots must always be an integer.
+        self.assertEqual(
+            coordinator.data["time_slots_value"],
+            4,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"time_slots": 4},
+        )
+
+        coordinator.async_update_listeners.assert_called_once()
+        coordinator.async_request_refresh.assert_awaited_once()
+
+    async def test_time_slots_api_failure(self):
+        method = load_method("async_set_time_slots")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"time_slots_value": 3},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(
+                    side_effect=RuntimeError("API failure")
+                ),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "API failure",
+        ):
+            await method(coordinator, 4.9)
+
+        # Original value must be restored.
+        self.assertEqual(
+            coordinator.data["time_slots_value"],
+            3,
+        )
+
+        # Notify once for the new value and once for rollback.
+        self.assertEqual(
+            coordinator.async_update_listeners.call_count,
+            2,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"time_slots": 4},
+        )
+
+        # No refresh after API failure.
+        coordinator.async_request_refresh.assert_not_awaited()
+
 
 if __name__ == "__main__":
     unittest.main()
