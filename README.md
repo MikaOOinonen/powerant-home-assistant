@@ -108,6 +108,14 @@ The integration supports the operating modes exposed by the PowerAnt API:
 
 Actual behavior is determined by the PowerAnt service and device firmware.
 
+### Calculated schedules
+
+The schedules displayed in Home Assistant are calculated locally by the integration using electricity prices and device settings retrieved from the PowerAnt API.
+
+These schedules are for monitoring and visualization purposes only. Home Assistant does not execute the calculated schedules or directly control the device based on them.
+
+Actual device operation is managed by the PowerAnt service and device firmware. The calculated schedules may differ from actual operation if device settings, electricity prices, or service behavior change.
+
 ## Electricity prices and tariffs
 
 The integration supports both 15-minute and 60-minute electricity price resolution, depending on the selected price area.
