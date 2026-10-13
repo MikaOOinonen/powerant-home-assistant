@@ -34,6 +34,7 @@ from .schedule import (
 from .prices import (
     _build_price_entries,
     _find_current_period,
+    _get_current_period_range,
     _get_price_period_context,
 )
 
@@ -49,25 +50,6 @@ from .device import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _get_current_period_range(
-    timestamp: str,
-    timestamp_format: str,
-    period_minutes: int,
-) -> str:
-    """Return the current price period as HH:MM-HH:MM."""
-
-    start = datetime.strptime(
-        timestamp,
-        timestamp_format,
-    )
-
-    end = start + timedelta(
-        minutes=period_minutes
-    )
-
-    return f"{start:%H:%M}-{end:%H:%M}"
 
 
 class PowerAntCoordinator(DataUpdateCoordinator[dict]):

@@ -10,7 +10,7 @@ SOURCE = (
     Path(__file__).resolve().parents[1]
     / "custom_components"
     / "powerant_api"
-    / "coordinator.py"
+    / "prices.py"
 )
 
 
