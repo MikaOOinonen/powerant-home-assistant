@@ -539,6 +539,39 @@ def _find_next_change(
     return None
 
 
+def _find_current_period(
+    entries: list[dict],
+    now_local: datetime,
+    is_15_minute: bool,
+) -> tuple[int | None, str]:
+    """Find the current electricity price period."""
+
+    if is_15_minute:
+        minute = (
+            now_local.minute // 15
+        ) * 15
+
+        current_key = (
+            now_local.strftime("%Y%m%d%H")
+            + f"{minute:02d}"
+        )
+    else:
+        current_key = now_local.strftime(
+            "%Y%m%d%H"
+        )
+
+    current_index = next(
+        (
+            index
+            for index, entry in enumerate(entries)
+            if entry["timestamp"] == current_key
+        ),
+        None,
+    )
+
+    return current_index, current_key
+
+
 class PowerAntCoordinator(DataUpdateCoordinator[dict]):
 
     def __init__(
@@ -733,27 +766,10 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         #
         # Current price period
         #
-        if is_15_minute:
-            minute = (
-                now_local.minute // 15
-            ) * 15
-
-            current_key = (
-                now_local.strftime("%Y%m%d%H")
-                + f"{minute:02d}"
-            )
-        else:
-            current_key = now_local.strftime(
-                "%Y%m%d%H"
-            )
-
-        current_index = next(
-            (
-                index
-                for index, entry in enumerate(entries)
-                if entry["timestamp"] == current_key
-            ),
-            None,
+        current_index, current_key = _find_current_period(
+            entries,
+            now_local,
+            is_15_minute,
         )
 
         if current_index is None:
