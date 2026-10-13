@@ -27,7 +27,12 @@ from .const import (
 )
 
 from .schedule import _calculate_status, _find_next_change
-from .prices import _build_price_entries, _find_current_period
+
+from .prices import (
+    _build_price_entries,
+    _find_current_period,
+    _get_price_period_context,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,46 +65,6 @@ def _as_bool_or_none(value):
         return value
 
     return None
-
-
-def _get_price_period_context(
-    prices: dict,
-    country_area: str,
-    now_utc: datetime,
-) -> tuple[datetime, str, str, bool, int, str]:
-    """Build date and resolution context for price periods."""
-
-    offset_hours = float(
-        prices.get("offset_hour", 0)
-    )
-
-    now_local = now_utc + timedelta(
-        hours=offset_hours
-    )
-
-    day_prefix = now_local.strftime("%Y%m%d")
-
-    tomorrow_prefix = (
-        now_local + timedelta(days=1)
-    ).strftime("%Y%m%d")
-
-    is_15_minute = country_area.endswith("_15m")
-    period_minutes = 15 if is_15_minute else 60
-
-    timestamp_format = (
-        "%Y%m%d%H%M"
-        if is_15_minute
-        else "%Y%m%d%H"
-    )
-
-    return (
-        now_local,
-        day_prefix,
-        tomorrow_prefix,
-        is_15_minute,
-        period_minutes,
-        timestamp_format,
-    )
 
 
 def _get_device_settings(
