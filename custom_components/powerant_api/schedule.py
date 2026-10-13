@@ -234,3 +234,122 @@ def _apply_time_slots(
             round_index += 1
 
         return
+
+
+def _calculate_status(
+    entries: list[dict],
+    mode: str,
+    cheapest_hours: float,
+    price_trigger: float,
+    time_slots: int,
+    period_minutes: int,
+) -> None:
+    """Calculate PowerAnt control state for all price periods."""
+
+    mode = str(mode or "").upper()
+
+    #
+    # First calculate the normal scheduling logic.
+    #
+    if mode == "ON":
+
+        for entry in entries:
+            entry["is_on"] = True
+
+    elif mode == "OFF":
+
+        for entry in entries:
+            entry["is_on"] = False
+
+    elif mode == "TIME":
+
+        _apply_cheapest_time(
+            entries,
+            cheapest_hours,
+            period_minutes,
+        )
+
+    elif mode == "TRIGGER":
+
+        for entry in entries:
+            entry["is_on"] = (
+                entry["effective"] < price_trigger
+            )
+
+    elif mode == "TIME_AND_TRIGGER":
+
+        _apply_cheapest_time(
+            entries,
+            cheapest_hours,
+            period_minutes,
+        )
+
+        for entry in entries:
+            entry["is_on"] = (
+                entry["is_on"]
+                and entry["effective"] < price_trigger
+            )
+
+    elif mode == "TIME_OR_TRIGGER":
+
+        _apply_cheapest_time(
+            entries,
+            cheapest_hours,
+            period_minutes,
+        )
+
+        for entry in entries:
+            entry["is_on"] = (
+                entry["is_on"]
+                or entry["effective"] < price_trigger
+            )
+
+    elif mode == "REVERSE_OR":
+
+        _apply_cheapest_time(
+            entries,
+            cheapest_hours,
+            period_minutes,
+        )
+
+        for entry in entries:
+            entry["is_on"] = (
+                entry["is_on"]
+                or entry["effective"] < price_trigger
+            )
+
+    elif mode == "TIME_SLOTS":
+
+        _apply_time_slots(
+            entries,
+            cheapest_hours,
+            time_slots,
+            period_minutes,
+        )
+
+    else:
+
+        for entry in entries:
+            entry["is_on"] = False
+
+    #
+    # Apply tariff ON/OFF after normal scheduling.
+    #
+    # ON  -> force logical state ON
+    # OFF -> force logical state OFF
+    #
+    for entry in entries:
+
+        if entry["rule"] == "ON":
+            entry["is_on"] = True
+
+        elif entry["rule"] == "OFF":
+            entry["is_on"] = False
+
+    #
+    # Reverse mode reverses the final relay output.
+    #
+    if mode == "REVERSE_OR":
+
+        for entry in entries:
+            entry["is_on"] = not entry["is_on"]
