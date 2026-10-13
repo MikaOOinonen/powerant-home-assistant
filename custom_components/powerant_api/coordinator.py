@@ -38,13 +38,8 @@ from .prices import (
     _get_price_period_context,
 )
 
-from .helpers import (
-    _as_bool_or_none, 
-    _as_float_or_none, 
-    _as_int_or_none,
-)
-
 from .device import (
+    _build_coordinator_data,
     _get_device_metadata,
     _get_device_settings,
 )
@@ -262,63 +257,28 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
             timestamp_format,
         )
 
-        return {
-            "device": device,
-
-            "device_name": device.get(
-                "device_name",
-                "PowerAnt",
-            ),
-
-            "device_model": device_model,
-
-            "firmware_version": firmware_version,
-
-            "capabilities": capabilities,
-
-            "product_key": self.product_key,
-
-            "mode": mode,
-            "cheapest_hours": cheapest_hours,
-            "cheapest_hours_value": _as_float_or_none(
-                device.get("cheapest_hours")
-            ),
-
-            "price_trigger_value": _as_float_or_none(
-                device.get("price_trigger")
-            ),
-
-            "time_slots": time_slots,
-            "time_slots_value": _as_int_or_none(
-                device.get("time_slots")
-            ),
-
-            "uses_tariffs_value": _as_bool_or_none(
-                device.get("uses_tariffs")
-            ),
-
-            "tariffs": {
-                hour: device.get(f"tariff_{hour}", "")
-                for hour in range(24)
+        return _build_coordinator_data(
+            device,
+            {
+                "product_key": self.product_key,
+                "device_model": device_model,
+                "firmware_version": firmware_version,
+                "capabilities": capabilities,
+                "country_area": country_area,
             },
-
-            "schedule": entries,
-
-            "tomorrow_schedule": tomorrow_entries,
-
-            "child_lock_value": _as_bool_or_none(
-                device.get("child_lock")
-            ),
-
-            "country_area": country_area,
-
-            "is_on": current["is_on"],
-            "current_price": current["price"],
-
-            "current_period": current_period,
-
-            "next_change": next_change,
-        }
+            {
+                "mode": mode,
+                "cheapest_hours": cheapest_hours,
+                "time_slots": time_slots,
+            },
+            {
+                "schedule": entries,
+                "tomorrow_schedule": tomorrow_entries,
+                "current": current,
+                "current_period": current_period,
+                "next_change": next_change,
+            },
+        )
 
 
     async def _async_update_setting(
