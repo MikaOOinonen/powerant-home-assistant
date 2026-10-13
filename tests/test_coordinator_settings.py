@@ -56,6 +56,35 @@ def attach_update_setting(coordinator):
 
 class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
 
+    async def test_uses_tariffs_success(self):
+        method = load_method("async_set_uses_tariffs")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"uses_tariffs_value": False},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+        await method(coordinator, True)
+
+        self.assertIs(
+            coordinator.data["uses_tariffs_value"],
+            True,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"uses_tariffs": True},
+        )
+
+        coordinator.async_update_listeners.assert_called_once()
+        coordinator.async_request_refresh.assert_awaited_once()
+
     async def test_cheapest_hours_success(self):
         method = load_method("async_set_cheapest_hours")
 
@@ -266,6 +295,50 @@ class TestCoordinatorSettings(unittest.IsolatedAsyncioTestCase):
         coordinator.api.async_update_device.assert_awaited_once_with(
             "test-device",
             {"time_slots": 4},
+        )
+
+        # No refresh after API failure.
+        coordinator.async_request_refresh.assert_not_awaited()
+
+    async def test_uses_tariffs_api_failure(self):
+        method = load_method("async_set_uses_tariffs")
+
+        coordinator = SimpleNamespace(
+            product_key="test-device",
+            data={"uses_tariffs_value": False},
+            api=SimpleNamespace(
+                async_update_device=AsyncMock(
+                    side_effect=RuntimeError("API failure")
+                ),
+            ),
+            async_update_listeners=Mock(),
+            async_request_refresh=AsyncMock(),
+        )
+
+        attach_update_setting(coordinator)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "API failure",
+        ):
+            await method(coordinator, True)
+
+        # Original value must be restored.
+        self.assertIs(
+            coordinator.data["uses_tariffs_value"],
+            False,
+        )
+
+        # One notification for the new value,
+        # another for the restored value.
+        self.assertEqual(
+            coordinator.async_update_listeners.call_count,
+            2,
+        )
+
+        coordinator.api.async_update_device.assert_awaited_once_with(
+            "test-device",
+            {"uses_tariffs": True},
         )
 
         # No refresh after API failure.

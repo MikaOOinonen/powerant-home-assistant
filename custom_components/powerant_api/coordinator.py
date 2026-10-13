@@ -507,27 +507,12 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
         """Enable or disable PowerAnt tariffs."""
 
         api_value = bool(value)
-        old_value = self.data.get("uses_tariffs_value")
 
-        # Update Home Assistant immediately.
-        self.data["uses_tariffs_value"] = api_value
-        self.async_update_listeners()
-
-        try:
-            await self.api.async_update_device(
-                self.product_key,
-                {
-                    "uses_tariffs": api_value,
-                },
-            )
-
-        except Exception:
-            # Restore old value if PowerAnt update fails.
-            self.data["uses_tariffs_value"] = old_value
-            self.async_update_listeners()
-            raise
-
-        await self.async_request_refresh()
+        await self._async_update_setting(
+            "uses_tariffs",
+            "uses_tariffs_value",
+            api_value,
+        )
 
 
     async def async_set_tariff(
