@@ -46,9 +46,17 @@ Other PowerAnt devices using the same API may work but have not yet been verifie
 
 ### Manual installation
 
-1. Download the repository.
+1. Download the latest release.
 2. Copy the `custom_components/powerant_api` directory into your Home Assistant `custom_components` directory.
 3. Restart Home Assistant.
+
+## Updating
+
+For HACS installations, update PowerAnt API through HACS and restart Home Assistant.
+
+For manual installations, back up the existing `custom_components/powerant_api` directory and replace it with the version from the new release.
+
+Updating from v0.1.0 to v0.2.0 does not require reconfiguring existing devices.
 
 ## Getting your PowerAnt API credentials
 
