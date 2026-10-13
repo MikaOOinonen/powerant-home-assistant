@@ -639,6 +639,40 @@ def _get_device_settings(
     )
 
 
+def _get_device_metadata(
+    device: dict,
+) -> tuple:
+    """Extract device metadata from PowerAnt API response."""
+
+    expanded_device_type = (
+        device.get("expand", {}).get("device_type", {})
+    )
+
+    device_model = expanded_device_type.get("device_name")
+
+    firmware_version = expanded_device_type.get("version")
+
+    capabilities = expanded_device_type.get(
+        "device_capabilities",
+        [],
+    )
+
+    if not isinstance(capabilities, list):
+        capabilities = []
+
+    country_area = device.get(
+        "country_area",
+        "finland-fi1_15m",
+    )
+
+    return (
+        device_model,
+        firmware_version,
+        capabilities,
+        country_area,
+    )
+
+
 class PowerAntCoordinator(DataUpdateCoordinator[dict]):
 
     def __init__(
@@ -711,24 +745,12 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
                 f"Error communicating with PowerAnt device API: {err}"
             ) from err
 
-        expanded_device_type = (
-            device.get("expand", {}).get("device_type", {})
-        )
-
-        device_model = expanded_device_type.get("device_name")
-
-        capabilities = expanded_device_type.get(
-            "device_capabilities",
-            [],
-        )
-
-        if not isinstance(capabilities, list):
-            capabilities = []
-
-        country_area = device.get(
-            "country_area",
-            "finland-fi1_15m",
-        )
+        (
+            device_model,
+            firmware_version,
+            capabilities,
+            country_area,
+        ) = _get_device_metadata(device)
 
         #
         # Price data
@@ -874,9 +896,7 @@ class PowerAntCoordinator(DataUpdateCoordinator[dict]):
 
             "device_model": device_model,
 
-            "firmware_version": expanded_device_type.get(
-                "version"
-            ),
+            "firmware_version": firmware_version,
 
             "capabilities": capabilities,
 
