@@ -28,7 +28,7 @@ from .const import (
 
 from .schedule import (
     _calculate_status,
-    _find_next_changei,
+    _find_next_change,
 )
 
 from .prices import (
