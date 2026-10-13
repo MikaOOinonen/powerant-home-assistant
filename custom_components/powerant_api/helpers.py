@@ -20,3 +20,14 @@ def _as_float_or_none(value):
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _as_int_or_none(value):
+    """Convert a PowerAnt integer API value to int or None."""
+    if value in (None, ""):
+        return None
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None

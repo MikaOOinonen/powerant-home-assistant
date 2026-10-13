@@ -26,7 +26,10 @@ from .const import (
     UPDATE_INTERVAL_MINUTES,
 )
 
-from .schedule import _calculate_status, _find_next_change
+from .schedule import (
+    _calculate_status,
+    _find_next_changei,
+)
 
 from .prices import (
     _build_price_entries,
@@ -34,20 +37,13 @@ from .prices import (
     _get_price_period_context,
 )
 
-from .helpers import _as_bool_or_none, _as_float_or_none
+from .helpers import (
+    _as_bool_or_none, 
+    _as_float_or_none, 
+    _as_int_or_none,
+)
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _as_int_or_none(value):
-    """Convert a PowerAnt integer API value to int or None."""
-    if value in (None, ""):
-        return None
-
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return None
 
 
 def _get_device_settings(
