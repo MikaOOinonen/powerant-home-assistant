@@ -4,7 +4,7 @@ All notable changes to the PowerAnt API Home Assistant integration are documente
 
 ## [Unreleased]
 
-## [0.2.0] - TBD
+## [0.2.0] - 2026-10-13
 
 ### Added
 - Example Home Assistant dashboard with setup instructions.
