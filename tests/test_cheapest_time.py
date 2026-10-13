@@ -9,7 +9,7 @@ SOURCE = (
     Path(__file__).resolve().parents[1]
     / "custom_components"
     / "powerant_api"
-    / "coordinator.py"
+    / "schedule.py"
 )
 
 tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
