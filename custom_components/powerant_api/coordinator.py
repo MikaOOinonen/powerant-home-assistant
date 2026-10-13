@@ -26,7 +26,7 @@ from .const import (
     UPDATE_INTERVAL_MINUTES,
 )
 
-from .schedule import _calculate_status
+from .schedule import _calculate_status, _find_next_change
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -144,38 +144,6 @@ def _build_price_entries(
     )
 
     return entries
-
-
-def _find_next_change(
-    entries: list[dict],
-    tomorrow_entries: list[dict],
-    current_index: int,
-    timestamp_format: str,
-) -> dict | None:
-    """Find the next ON/OFF state change."""
-
-    current = entries[current_index]
-
-    future_entries = (
-        entries[current_index + 1:]
-        + tomorrow_entries
-    )
-
-    for entry in future_entries:
-
-        if entry["is_on"] != current["is_on"]:
-
-            change = datetime.strptime(
-                entry["timestamp"],
-                timestamp_format,
-            )
-
-            return {
-                "time": change.strftime("%H:%M"),
-                "state": entry["is_on"],
-            }
-
-    return None
 
 
 def _find_current_period(

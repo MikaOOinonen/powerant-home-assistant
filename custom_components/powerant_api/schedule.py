@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 
 def _apply_cheapest_time(
     entries: list[dict],
@@ -353,3 +355,35 @@ def _calculate_status(
 
         for entry in entries:
             entry["is_on"] = not entry["is_on"]
+
+
+def _find_next_change(
+    entries: list[dict],
+    tomorrow_entries: list[dict],
+    current_index: int,
+    timestamp_format: str,
+) -> dict | None:
+    """Find the next ON/OFF state change."""
+
+    current = entries[current_index]
+
+    future_entries = (
+        entries[current_index + 1:]
+        + tomorrow_entries
+    )
+
+    for entry in future_entries:
+
+        if entry["is_on"] != current["is_on"]:
+
+            change = datetime.strptime(
+                entry["timestamp"],
+                timestamp_format,
+            )
+
+            return {
+                "time": change.strftime("%H:%M"),
+                "state": entry["is_on"],
+            }
+
+    return None
