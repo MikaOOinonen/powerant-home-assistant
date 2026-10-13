@@ -34,6 +34,8 @@ from .prices import (
     _get_price_period_context,
 )
 
+from .helpers import _as_bool_or_none
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -57,14 +59,6 @@ def _as_int_or_none(value):
         return int(float(value))
     except (TypeError, ValueError):
         return None
-
-
-def _as_bool_or_none(value):
-    """Return a PowerAnt boolean API value or None."""
-    if isinstance(value, bool):
-        return value
-
-    return None
 
 
 def _get_device_settings(

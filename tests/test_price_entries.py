@@ -13,6 +13,7 @@ BASE = (
 
 COORDINATOR = BASE / "coordinator.py"
 PRICES = BASE / "prices.py"
+HELPERS = BASE / "helpers.py"
 
 
 def load_function(source, name, namespace):
@@ -39,7 +40,7 @@ def load_function(source, name, namespace):
 
 namespace = {}
 
-load_function(PRICES, "_as_bool_or_none", namespace)
+load_function(HELPERS, "_as_bool_or_none", namespace)
 load_function(PRICES, "_is_price_key", namespace)
 load_function(PRICES, "_build_price_entries", namespace)
 

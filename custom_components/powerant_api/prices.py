@@ -4,15 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from .helpers import _as_bool_or_none
+
+
 def _is_price_key(key: str) -> bool:
     return isinstance(key, str) and key.isdigit() and len(key) in (10, 12)
-
-def _as_bool_or_none(value):
-    """Return a PowerAnt boolean API value or None."""
-    if isinstance(value, bool):
-        return value
-
-    return None
 
 
 def _build_price_entries(
