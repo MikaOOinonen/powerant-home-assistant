@@ -8,6 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import PowerAntCoordinator
 from .entity import PowerAntEntity, get_price_unit
+from .savings import calculate_savings
 
 
 async def async_setup_entry(
@@ -22,6 +23,8 @@ async def async_setup_entry(
         PowerAntCurrentPeriodSensor(coordinator),
         PowerAntNextChangeSensor(coordinator),
         PowerAntScheduleSensor(coordinator),
+        PowerAntSavingsSensor(coordinator, "today"),
+        PowerAntSavingsSensor(coordinator, "tomorrow"),
     ]
 
     async_add_entities(entities)
@@ -153,3 +156,56 @@ class PowerAntScheduleSensor(
         }
 
 
+class PowerAntSavingsSensor(
+    PowerAntEntity,
+    SensorEntity,
+):
+    """PowerAnt estimated electricity price savings sensor."""
+
+    _attr_has_entity_name = True
+    _attr_native_unit_of_measurement = "%"
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:percent"
+
+    def __init__(
+        self,
+        coordinator: PowerAntCoordinator,
+        day: str,
+    ) -> None:
+        super().__init__(coordinator)
+
+        self._day = day
+        self._attr_translation_key = f"savings_{day}"
+
+        self._attr_unique_id = (
+            f"{coordinator.product_key}_savings_{day}"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return calculated savings percentage."""
+
+        schedule_key = (
+            "schedule"
+            if self._day == "today"
+            else "tomorrow_schedule"
+        )
+
+        schedule = self.coordinator.data.get(schedule_key) or []
+
+        return calculate_savings(schedule)
+
+    @property
+    def available(self) -> bool:
+        """Return unavailable if schedule data is missing."""
+
+        if not super().available:
+            return False
+
+        schedule_key = (
+            "schedule"
+            if self._day == "today"
+            else "tomorrow_schedule"
+        )
+
+        return bool(self.coordinator.data.get(schedule_key))
