@@ -1,5 +1,10 @@
 # PowerAnt API – Home Assistant Integration
 
+[![Release](https://img.shields.io/github/v/release/MikaOOinonen/powerant-home-assistant?label=release)](https://github.com/MikaOOinonen/powerant-home-assistant/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![HACS](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://github.com/MikaOOinonen/powerant-home-assistant)
+[![ChatGPT](https://img.shields.io/badge/Built%20with-ChatGPT-10a37f)](https://chatgpt.com/)
+
 A custom Home Assistant integration for PowerAnt smart energy control devices, using the official PowerAnt cloud API.
 
 Monitor your PowerAnt devices, view electricity prices and calculated operating schedules, and manage supported device settings directly from Home Assistant.
@@ -11,6 +16,7 @@ Monitor your PowerAnt devices, view electricity prices and calculated operating 
 - Monitor device power state and current electricity price.
 - View the current price period and next scheduled state change.
 - View calculated operating schedules for today and tomorrow.
+- View estimated electricity cost savings for today and tomorrow based on calculated operating schedules.
 - Configure supported operating modes.
 - Adjust cheapest operating hours, price triggers, and time slots.
 - Select electricity price area and 15-minute or 60-minute price resolution.
@@ -148,6 +154,38 @@ The example requires **ApexCharts Card** and **card-mod**, both available throug
 
 Follow the setup instructions to configure the dashboard for your own PowerAnt device.
 
+## Architecture
+
+The integration is organized into separate modules to make the code easier to maintain, test, and extend.
+
+```text
+custom_components/powerant_api/
+├── __init__.py          # Integration setup
+├── api.py               # PowerAnt cloud API client
+├── binary_sensor.py     # Binary sensor entities
+├── config_flow.py       # Configuration and authentication
+├── const.py             # Constants
+├── coordinator.py       # Data update coordination
+├── device.py            # Device information and capabilities
+├── entity.py            # Base entity definitions
+├── helpers.py           # Shared helper functions
+├── number.py            # Numeric configuration entities
+├── prices.py            # Electricity price processing
+├── savings.py           # Estimated savings calculations
+├── schedule.py          # Operating schedule calculations
+├── select.py            # Selection entities
+├── sensor.py            # Sensor entities
+├── switch.py            # Switch entities
+├── manifest.json        # Integration metadata
+├── strings.json         # UI strings
+├── brand/
+│   └── icon.png         # Integration icon
+└── translations/
+    └── en.json          # English translations
+```
+
+The main calculation logic is separated into `prices.py`, `schedule.py`, and `savings.py`, while `coordinator.py` manages data updates and provides the results to Home Assistant entities.
+
 ## Troubleshooting
 
 If a device cannot be added or updated:
@@ -171,6 +209,16 @@ Users are responsible for verifying device operation and settings, especially wh
 Report bugs or suggest improvements through [GitHub Issues](https://github.com/MikaOOinonen/powerant-home-assistant/issues).
 
 When reporting an issue, include the Home Assistant version, integration version, device model, and relevant logs. Remove API keys and other sensitive information before sharing.
+
+## Development & Credits
+
+Developed and maintained by **Mika Oinonen**, with significant assistance from **OpenAI ChatGPT**.
+
+ChatGPT has been used throughout the project for architecture design, Python development, refactoring, debugging, automated testing, documentation, and Home Assistant dashboard development.
+
+This project is an example of how AI-assisted development can help turn an idea into a working integration, combining practical Home Assistant experience with AI-supported software development.
+
+**Built with the assistance of ChatGPT by OpenAI.**
 
 ## License
 
