@@ -206,6 +206,8 @@ views:
                     in_chart: false
                     in_header: true
                     legend_value: false
+                  data_generator: |
+                    return [[start.getTime(), Number(entity.state)]];
                 - entity: sensor.###DEVICE###_calculated_schedule
                   name: Power ON
                   type: column
