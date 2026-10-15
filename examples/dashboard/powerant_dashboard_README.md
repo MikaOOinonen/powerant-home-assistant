@@ -11,6 +11,23 @@ Install these frontend custom cards using HACS before importing the dashboard:
 
 The **PowerAnt API** integration must also be installed and configured for your device.
 
+## Estimated savings
+
+The dashboard displays estimated electricity price savings in the
+ApexCharts header for both today's and tomorrow's schedules.
+
+The values are provided by these PowerAnt API sensors:
+
+- `sensor.###DEVICE###_savings_today`
+- `sensor.###DEVICE###_savings_tomorrow`
+
+Savings are calculated from the available schedule data.
+Tomorrow's percentage may change as additional electricity
+prices become available.
+
+The savings percentage is displayed in green with one decimal place.
+The existing schedule chart series remain unchanged.
+
 ## Configure the example
 
 1. Make a copy of `powerant_dashboard.yaml`.

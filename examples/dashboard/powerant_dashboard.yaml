@@ -29,7 +29,8 @@ views:
             header:
               show: true
               title: Today - Calculated schedule
-              show_states: false
+              show_states: true
+              colorize_states: true
             graph_span: 24h
             span:
               start: day
@@ -47,11 +48,21 @@ views:
                 bar:
                   columnWidth: 80%
             series:
+              - entity: sensor.###DEVICE###_savings_today
+                name: Estimated savings
+                type: line
+                color: green
+                float_precision: 1
+                show:
+                  in_chart: false
+                  in_header: true
+                  legend_value: false
               - entity: sensor.###DEVICE###_calculated_schedule
                 name: Power ON
                 type: column
                 color: green
                 show:
+                  in_header: false
                   legend_value: false
                 data_generator: |
                   const schedule = entity.attributes.schedule || [];
@@ -85,6 +96,7 @@ views:
                 type: column
                 color: lightgrey
                 show:
+                  in_header: false
                   legend_value: false
                 data_generator: |
                   const schedule = entity.attributes.schedule || [];
@@ -118,6 +130,7 @@ views:
                 type: column
                 color: red
                 show:
+                  in_header: false
                   legend_value: false
                 data_generator: >
                   const schedule = entity.attributes.schedule || []; const now =
@@ -164,7 +177,8 @@ views:
               header:
                 show: true
                 title: Tomorrow - Calculated schedule
-                show_states: false
+                show_states: true
+                colorize_states: true
               graph_span: 24h
               span:
                 start: day
@@ -183,11 +197,21 @@ views:
                   bar:
                     columnWidth: 80%
               series:
+                - entity: sensor.###DEVICE###_savings_tomorrow
+                  name: Estimated savings
+                  type: line
+                  color: green
+                  float_precision: 1
+                  show:
+                    in_chart: false
+                    in_header: true
+                    legend_value: false
                 - entity: sensor.###DEVICE###_calculated_schedule
                   name: Power ON
                   type: column
                   color: green
                   show:
+                    in_header: false
                     legend_value: false
                   data_generator: |
                     const schedule = entity.attributes.tomorrow_schedule || [];
@@ -221,6 +245,7 @@ views:
                   type: column
                   color: lightgrey
                   show:
+                    in_header: false
                     legend_value: false
                   data_generator: |
                     const schedule = entity.attributes.tomorrow_schedule || [];

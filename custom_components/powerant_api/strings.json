@@ -39,6 +39,12 @@
       },
       "calculated_schedule": {
         "name": "Calculated schedule"
+      },
+      "savings_today": {
+        "name": "Savings today"
+      },
+      "savings_tomorrow": {
+        "name": "Savings tomorrow"
       }
     },
     "binary_sensor": {
